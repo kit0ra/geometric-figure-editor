@@ -1,13 +1,15 @@
 package com.geometriceditor.ui;
 
-import com.geometriceditor.model.Shape;
-import com.geometriceditor.model.Rectangle;
-import com.geometriceditor.model.RegularPolygon;
-import com.geometriceditor.factory.ShapeFactory;
+import java.awt.BorderLayout;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+
+import com.geometriceditor.factory.ShapeFactory;
 
 public class MainWindow extends JFrame {
     private static final int WIDTH = 800;
@@ -28,13 +30,20 @@ public class MainWindow extends JFrame {
         shapeFactory = ShapeFactory.getInstance();
 
         // Create components
-        initializeToolbar();
         initializeWhiteboard();
+        initializeToolbar();
         initializeMenuBar();
+
+        // Center the window
+        setLocationRelativeTo(null);
     }
 
     private void initializeToolbar() {
         toolbarPanel = new ToolbarPanel(shapeFactory);
+
+        // IMPORTANT: Set the whiteboard for the toolbar AFTER whiteboard is created
+        toolbarPanel.setWhiteboard(whiteboard);
+
         add(toolbarPanel, BorderLayout.NORTH);
     }
 

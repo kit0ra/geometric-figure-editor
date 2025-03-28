@@ -132,4 +132,13 @@ public class WhiteboardPanel extends JPanel {
         g2d.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
         // Implement based on shape type
     }
+
+    public void undo() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'undo'");
+    }
+
+    void redo() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
