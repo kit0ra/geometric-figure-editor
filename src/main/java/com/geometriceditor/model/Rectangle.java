@@ -117,4 +117,22 @@ public class Rectangle extends Shape {
                 ", rotation=" + rotation +
                 '}';
     }
+
+    public boolean intersects(Rectangle other) {
+        // Create Rectangle2D objects for both rectangles
+        Rectangle2D thisRect = new Rectangle2D.Double(
+                this.position.x,
+                this.position.y,
+                this.width,
+                this.height);
+
+        Rectangle2D otherRect = new Rectangle2D.Double(
+                other.position.x,
+                other.position.y,
+                other.width,
+                other.height);
+
+        // Check for intersection
+        return thisRect.intersects(otherRect);
+    }
 }

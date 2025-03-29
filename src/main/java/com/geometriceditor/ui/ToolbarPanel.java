@@ -65,6 +65,25 @@ public class ToolbarPanel extends JPanel {
             }
         });
         add(redoButton);
+
+        // Group Button
+        JButton groupButton = new JButton("Group");
+        groupButton.addActionListener(e -> {
+            if (whiteboard != null) {
+                whiteboard.groupSelectedShapes();
+            }
+        });
+        add(groupButton);
+
+        // Ungroup Button
+        JButton ungroupButton = new JButton("Ungroup");
+        ungroupButton.addActionListener(e -> {
+            if (whiteboard != null) {
+                whiteboard.ungroupSelectedShape();
+            }
+        });
+        add(ungroupButton);
+
     }
 
     private JButton createShapeButton(String name, ActionListener action) {
