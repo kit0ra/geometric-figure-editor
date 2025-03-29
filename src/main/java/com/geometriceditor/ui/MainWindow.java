@@ -1,15 +1,24 @@
 package com.geometriceditor.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.io.IOException;
 
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
 import com.geometriceditor.factory.ShapeFactory;
@@ -45,9 +54,17 @@ public class MainWindow extends JFrame {
 
     private void initializeToolbar() {
         toolbarPanel = new ToolbarPanel(shapeFactory);
-
-        // IMPORTANT: Set the whiteboard for the toolbar AFTER whiteboard is created
         toolbarPanel.setWhiteboard(whiteboard);
+
+        // Create a scrollable toolbar container
+        JScrollPane toolbarScroll = new JScrollPane(toolbarPanel);
+        toolbarScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        toolbarScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        toolbarScroll.setBorder(BorderFactory.createEmptyBorder());
+
+        JPanel toolbarContainer = new JPanel(new BorderLayout());
+        toolbarContainer.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        toolbarContainer.add(toolbarPanel, BorderLayout.CENTER);
 
         add(toolbarPanel, BorderLayout.NORTH);
     }
@@ -63,25 +80,95 @@ public class MainWindow extends JFrame {
         // File Menu
         JMenu fileMenu = new JMenu("File");
         JMenuItem newItem = new JMenuItem("New");
+        newItem.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to create a new file?", "New File",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                whiteboard.clearShapes();
+            }
+        });
+
         JMenuItem saveItem = new JMenuItem("Save");
         JMenuItem loadItem = new JMenuItem("Load");
+        JMenuItem exitItem = new JMenuItem("Exit");
+        saveItem.addActionListener(e -> saveToFile());
+        loadItem.addActionListener(e -> loadFromFile());
+        exitItem.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to exit?", "Exit",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                System.exit(0);
+            }
+        });
+
         fileMenu.add(newItem);
+        fileMenu.addSeparator();
         fileMenu.add(saveItem);
         fileMenu.add(loadItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitItem);
         menuBar.add(fileMenu);
 
         // Edit Menu
         JMenu editMenu = new JMenu("Edit");
         JMenuItem undoItem = new JMenuItem("Undo");
+        undoItem.addActionListener(e -> whiteboard.undo());
+
         JMenuItem redoItem = new JMenuItem("Redo");
+        redoItem.addActionListener(e -> whiteboard.redo());
+
+        JMenuItem propertiesItem = new JMenuItem("Properties");
+        propertiesItem.addActionListener(e -> {
+            if (whiteboard.getSelectedShapes().size() == 1) {
+                PropertyEditDialog.editShapeProperties(this, whiteboard.getSelectedShapes().get(0));
+            }
+        });
+
         editMenu.add(undoItem);
         editMenu.add(redoItem);
+        editMenu.addSeparator();
+        editMenu.add(propertiesItem);
         menuBar.add(editMenu);
+
+        // View Menu
+        JMenu viewMenu = new JMenu("View");
+
+        // Grid visibility toggle
+        JCheckBoxMenuItem gridItem = new JCheckBoxMenuItem("Show Grid");
+        gridItem.addActionListener(e -> {
+            whiteboard.setGridVisible(gridItem.isSelected());
+        });
+        viewMenu.add(gridItem);
+
+        // Grid size submenu
+        JMenu gridSizeMenu = new JMenu("Grid Size");
+        int[] sizes = { 10, 15, 20, 25, 30, 40, 50 };
+        for (int size : sizes) {
+            JMenuItem sizeItem = new JMenuItem(size + "px");
+            sizeItem.addActionListener(e -> whiteboard.setGridSize(size));
+            gridSizeMenu.add(sizeItem);
+        }
+        viewMenu.add(gridSizeMenu);
+
+        // Grid color chooser
+        JMenuItem gridColorItem = new JMenuItem("Grid Color");
+        gridColorItem.addActionListener(e -> {
+            Color newColor = JColorChooser.showDialog(
+                    this,
+                    "Choose Grid Color",
+                    whiteboard.getGridColor());
+            if (newColor != null) {
+                whiteboard.setGridColor(newColor);
+            }
+        });
+        viewMenu.add(gridColorItem);
+
+        menuBar.add(viewMenu);
 
         setJMenuBar(menuBar);
 
-        saveItem.addActionListener(e -> saveToFile());
-        loadItem.addActionListener(e -> loadFromFile());
+        // Add keyboard shortcuts
+        addKeyboardShortcuts();
     }
 
     public static void main(String[] args) {
@@ -115,4 +202,33 @@ public class MainWindow extends JFrame {
             }
         }
     }
+
+    private void addKeyboardShortcuts() {
+        // Delete selected shapes with Delete key
+        getRootPane().getInputMap().put(KeyStroke.getKeyStroke("DELETE"), "delete");
+        getRootPane().getActionMap().put("delete", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                whiteboard.deleteSelected();
+            }
+        });
+
+        // Group/Ungroup with Ctrl+G/Ctrl+Shift+G
+        getRootPane().getInputMap().put(KeyStroke.getKeyStroke("control G"), "group");
+        getRootPane().getActionMap().put("group", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                whiteboard.groupSelected();
+            }
+        });
+
+        getRootPane().getInputMap().put(KeyStroke.getKeyStroke("control shift G"), "ungroup");
+        getRootPane().getActionMap().put("ungroup", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                whiteboard.ungroupSelected();
+            }
+        });
+    }
+
 }

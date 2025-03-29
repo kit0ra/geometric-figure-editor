@@ -39,9 +39,8 @@ public class Rectangle extends Shape {
 
         // Apply rotation
         if (rotation != 0) {
-            g2d.rotate(Math.toRadians(rotation),
-                    rotationCenter.x,
-                    rotationCenter.y);
+            Point center = getGeometricCenter();
+            g2d.rotate(Math.toRadians(rotation), center.x, center.y);
         }
 
         // Set colors
@@ -105,6 +104,11 @@ public class Rectangle extends Shape {
 
     public void setCornerRadius(float cornerRadius) {
         this.cornerRadius = cornerRadius;
+    }
+
+    @Override
+    public Point getGeometricCenter() {
+        return new Point(position.x + width / 2, position.y + height / 2);
     }
 
     @Override

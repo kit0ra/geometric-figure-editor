@@ -113,6 +113,10 @@ public abstract class Shape implements Cloneable, Serializable {
         this.rotationCenter = rotationCenter;
     }
 
+    public Point getGeometricCenter() {
+        return new Point(position.x, position.y); // Default to position
+    }
+
     public String getId() {
         return id;
     }

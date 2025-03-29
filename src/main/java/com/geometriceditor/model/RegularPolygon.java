@@ -44,9 +44,8 @@ public class RegularPolygon extends Shape {
 
         // Apply rotation
         if (rotation != 0) {
-            g2d.rotate(Math.toRadians(rotation),
-                    rotationCenter.x,
-                    rotationCenter.y);
+            Point center = getGeometricCenter();
+            g2d.rotate(Math.toRadians(rotation), center.x, center.y);
         }
 
         // Create polygon points
@@ -114,6 +113,11 @@ public class RegularPolygon extends Shape {
 
     public int getRadius() {
         return radius;
+    }
+
+    @Override
+    public Point getGeometricCenter() {
+        return new Point(position.x + radius, position.y + radius);
     }
 
     @Override
