@@ -1,15 +1,19 @@
 package com.geometriceditor.ui;
 
 import java.awt.BorderLayout;
+import java.io.IOException;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 import com.geometriceditor.factory.ShapeFactory;
+import com.geometriceditor.state.StateManager;
 
 public class MainWindow extends JFrame {
     private static final int WIDTH = 800;
@@ -36,6 +40,7 @@ public class MainWindow extends JFrame {
 
         // Center the window
         setLocationRelativeTo(null);
+
     }
 
     private void initializeToolbar() {
@@ -74,6 +79,9 @@ public class MainWindow extends JFrame {
         menuBar.add(editMenu);
 
         setJMenuBar(menuBar);
+
+        saveItem.addActionListener(e -> saveToFile());
+        loadItem.addActionListener(e -> loadFromFile());
     }
 
     public static void main(String[] args) {
@@ -82,5 +90,29 @@ public class MainWindow extends JFrame {
             MainWindow window = new MainWindow();
             window.setVisible(true);
         });
+    }
+
+    private void saveToFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                StateManager stateManager = new StateManager();
+                stateManager.saveToFile(whiteboard, fileChooser.getSelectedFile());
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Error saving file: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void loadFromFile() {
+        JFileChooser fileChooser = new JFileChooser();
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                StateManager stateManager = new StateManager();
+                stateManager.loadFromFile(whiteboard, fileChooser.getSelectedFile());
+            } catch (IOException | ClassNotFoundException ex) {
+                JOptionPane.showMessageDialog(this, "Error loading file: " + ex.getMessage());
+            }
+        }
     }
 }
