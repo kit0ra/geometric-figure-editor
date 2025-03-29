@@ -284,32 +284,57 @@ public class WhiteboardPanel extends JPanel {
         repaint();
     }
 
-    // In WhiteboardPanel.java
     public void groupSelectedShapes() {
-        if (selectedShape != null) {
-            if (selectedShape instanceof ShapeGroup) {
-                // Already a group - add to existing group
-                ShapeGroup group = (ShapeGroup) selectedShape;
-                // Add logic to add other selected shapes to this group
-            } else {
-                // Create new group
-                ShapeGroup group = new ShapeGroup();
-                group.addShape(selectedShape);
-                shapes.remove(selectedShape);
-                shapes.add(group);
-                selectedShape = group;
-                repaint();
+        if (selectedShapes.size() > 1) { // Need at least 2 shapes to group
+            ShapeGroup group = new ShapeGroup();
+
+            // Add all selected shapes to the new group
+            for (Shape shape : new ArrayList<>(selectedShapes)) {
+                group.addShape(shape);
+                shapes.remove(shape); // Remove from main shapes list
             }
+
+            // Add the new group to shapes list
+            shapes.add(group);
+
+            // Update selection - now only the group is selected
+            selectedShapes.clear();
+            selectedShapes.add(group);
+
+            repaint();
+        } else if (selectedShapes.size() == 1 && selectedShapes.get(0) instanceof ShapeGroup) {
+            // Handle adding new shapes to existing group if needed
+            // (Implementation depends on your desired behavior)
         }
     }
 
     public void ungroupSelectedShape() {
-        if (selectedShape instanceof ShapeGroup) {
-            ShapeGroup group = (ShapeGroup) selectedShape;
-            shapes.remove(group);
-            shapes.addAll(group.getShapes());
-            repaint();
+        List<Shape> toUngroup = new ArrayList<>();
+
+        // Find all ShapeGroups in selection
+        for (Shape shape : selectedShapes) {
+            if (shape instanceof ShapeGroup) {
+                toUngroup.add(shape);
+            }
         }
+
+        // Ungroup each group
+        for (Shape group : toUngroup) {
+            ShapeGroup shapeGroup = (ShapeGroup) group;
+            List<Shape> children = shapeGroup.getShapes();
+
+            // Add children back to main shapes list
+            shapes.addAll(children);
+
+            // Remove the group
+            shapes.remove(group);
+
+            // Update selection to select the ungrouped children
+            selectedShapes.remove(group);
+            selectedShapes.addAll(children);
+        }
+
+        repaint();
     }
 
     private void selectShapesInRectangle(java.awt.Rectangle rect) {
