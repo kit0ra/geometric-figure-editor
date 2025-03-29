@@ -14,12 +14,16 @@ import java.util.List;
 
 import javax.swing.JPanel;
 
+import com.geometriceditor.command.AddShapeCommand;
+import com.geometriceditor.command.CommandManager;
+import com.geometriceditor.command.CompositeCommand;
 import com.geometriceditor.model.Shape;
 
 public class WhiteboardPanel extends JPanel {
     private List<Shape> shapes;
     private Shape selectedShape;
     private Point dragStartPoint;
+    private CommandManager commandManager = new CommandManager();
 
     public WhiteboardPanel() {
         shapes = new ArrayList<>();
@@ -100,8 +104,18 @@ public class WhiteboardPanel extends JPanel {
         return null;
     }
 
-    public void addShape(Shape shape) {
-        shapes.add(shape);
+    public void directRemoveShape(Shape shape) {
+        shapes.remove(shape);
+        repaint();
+    }
+
+    public List<Shape> getShapes() {
+        return shapes;
+    }
+
+    public void clearShapes() {
+        shapes.clear();
+        selectedShape = null;
         repaint();
     }
 
@@ -133,12 +147,37 @@ public class WhiteboardPanel extends JPanel {
         // Implement based on shape type
     }
 
-    public void undo() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'undo'");
+    public void directAddShape(Shape shape) {
+        shapes.add(shape);
+        repaint();
     }
 
-    void redo() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public void addShape(Shape shape) {
+        if (shape == null)
+            return;
+        commandManager.executeCommand(new AddShapeCommand(this, shape));
     }
+
+    public void addMultipleShapes(List<Shape> shapes) {
+        if (shapes == null || shapes.isEmpty()) {
+            return;
+        }
+
+        CompositeCommand batch = new CompositeCommand();
+        for (Shape shape : shapes) {
+            batch.add(new AddShapeCommand(this, shape));
+        }
+        commandManager.executeCommand(batch);
+    }
+
+    public void undo() {
+        commandManager.undo();
+        repaint();
+    }
+
+    public void redo() {
+        commandManager.redo();
+        repaint();
+    }
+
 }
