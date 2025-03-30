@@ -31,6 +31,8 @@ import com.geometriceditor.model.Rectangle;
 import com.geometriceditor.model.RegularPolygon;
 import com.geometriceditor.model.Shape;
 import com.geometriceditor.model.ShapeGroup;
+import com.geometriceditor.rendering.AWTRenderer;
+import com.geometriceditor.rendering.ShapeRenderer;
 
 public class WhiteboardPanel extends JPanel {
     // Constants
@@ -41,6 +43,7 @@ public class WhiteboardPanel extends JPanel {
     private final List<Shape> shapes = new ArrayList<>();
     private final List<Shape> selectedShapes = new ArrayList<>();
     private final CommandManager commandManager = new CommandManager();
+    private final ShapeRenderer shapeRenderer = new AWTRenderer(); // Instantiate the renderer
 
     // UI interaction fields
     private Point dragStartPoint;
@@ -228,7 +231,8 @@ public class WhiteboardPanel extends JPanel {
     }
 
     private void renderShapes(Graphics2D g2d) {
-        shapes.forEach(shape -> shape.draw(g2d));
+        // Use the renderer to draw each shape
+        shapes.forEach(shape -> shape.draw(g2d, shapeRenderer));
     }
 
     private void renderSelections(Graphics2D g2d) {

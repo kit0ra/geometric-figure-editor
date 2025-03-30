@@ -17,7 +17,7 @@ import javax.swing.SpinnerNumberModel;
 import com.geometriceditor.model.Shape;
 
 public class PropertyEditDialog extends JDialog {
-    private Shape shape;
+    private final Shape shape;
     private JTextField xField, yField;
     private JButton colorFillButton, colorBorderButton;
     private JSpinner rotationSpinner;

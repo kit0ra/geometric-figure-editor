@@ -46,10 +46,13 @@ public class ShapeGroup extends Shape {
     }
 
     @Override
-    public void draw(Graphics2D g2d) {
-        // Draw all shapes in the group
+    public void draw(Graphics2D g2d, com.geometriceditor.rendering.ShapeRenderer renderer) {
+        // Optionally call the renderer for the group itself (e.g., draw bounding box)
+        renderer.drawShapeGroup(g2d, this);
+
+        // Draw all shapes in the group, passing the renderer down
         for (Shape shape : shapes) {
-            shape.draw(g2d);
+            shape.draw(g2d, renderer); // Pass the renderer
         }
     }
 

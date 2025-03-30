@@ -47,9 +47,10 @@ public abstract class Shape implements Cloneable, Serializable {
     /**
      * Abstract method to draw the shape
      *
-     * @param g2d Graphics2D context
+     * @param g2d      Graphics2D context
+     * @param renderer The renderer implementation to use
      */
-    public abstract void draw(Graphics2D g2d);
+    public abstract void draw(Graphics2D g2d, com.geometriceditor.rendering.ShapeRenderer renderer);
 
     /**
      * Abstract method to check if a point is inside the shape
@@ -79,6 +80,14 @@ public abstract class Shape implements Cloneable, Serializable {
     public void move(int dx, int dy) {
         this.position.x += dx;
         this.position.y += dy;
+    }
+
+    public int getX() {
+        return position.x;
+    }
+
+    public int getY() {
+        return position.y;
     }
 
     public Color getFillColor() {

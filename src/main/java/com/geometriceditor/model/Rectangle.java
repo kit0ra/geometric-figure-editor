@@ -33,7 +33,7 @@ public class Rectangle extends Shape {
     }
 
     @Override
-    public void draw(Graphics2D g2d) {
+    public void draw(Graphics2D g2d, com.geometriceditor.rendering.ShapeRenderer renderer) {
         // Store the original transform
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -43,24 +43,11 @@ public class Rectangle extends Shape {
             g2d.rotate(Math.toRadians(rotation), center.x, center.y);
         }
 
-        // Set colors
-        g2d.setColor(fillColor);
-        g2d.fillRoundRect(
-                position.x,
-                position.y,
-                width,
-                height,
-                (int) cornerRadius,
-                (int) cornerRadius);
-
-        g2d.setColor(borderColor);
-        g2d.drawRoundRect(
-                position.x,
-                position.y,
-                width,
-                height,
-                (int) cornerRadius,
-                (int) cornerRadius);
+        // Delegate drawing to the renderer
+        // Note: The AWTRenderer currently doesn't support cornerRadius.
+        // This could be added to the ShapeRenderer interface and implementations if
+        // needed.
+        renderer.drawRectangle(g2d, this);
 
         // Restore the original transform
         g2d.setTransform(oldTransform);

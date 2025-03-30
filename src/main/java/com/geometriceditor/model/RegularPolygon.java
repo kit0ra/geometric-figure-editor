@@ -38,7 +38,7 @@ public class RegularPolygon extends Shape {
     }
 
     @Override
-    public void draw(Graphics2D g2d) {
+    public void draw(Graphics2D g2d, com.geometriceditor.rendering.ShapeRenderer renderer) {
         // Store the original transform
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -48,25 +48,8 @@ public class RegularPolygon extends Shape {
             g2d.rotate(Math.toRadians(rotation), center.x, center.y);
         }
 
-        // Create polygon points
-        int[] xPoints = new int[numberOfSides];
-        int[] yPoints = new int[numberOfSides];
-
-        for (int i = 0; i < numberOfSides; i++) {
-            double angle = 2 * Math.PI * i / numberOfSides;
-            xPoints[i] = (int) (position.x + radius * Math.cos(angle));
-            yPoints[i] = (int) (position.y + radius * Math.sin(angle));
-        }
-
-        Polygon poly = new Polygon(xPoints, yPoints, numberOfSides);
-
-        // Fill polygon
-        g2d.setColor(fillColor);
-        g2d.fillPolygon(poly);
-
-        // Draw polygon border
-        g2d.setColor(borderColor);
-        g2d.drawPolygon(poly);
+        // Delegate drawing to the renderer
+        renderer.drawRegularPolygon(g2d, this);
 
         // Restore the original transform
         g2d.setTransform(oldTransform);
