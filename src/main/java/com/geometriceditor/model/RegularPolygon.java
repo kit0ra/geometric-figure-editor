@@ -100,7 +100,7 @@ public class RegularPolygon extends Shape {
 
     @Override
     public Point getGeometricCenter() {
-        return new Point(position.x + radius, position.y + radius);
+        return new Point(position.x, position.y);
     }
 
     @Override

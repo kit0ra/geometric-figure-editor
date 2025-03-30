@@ -54,7 +54,18 @@ public class SelectionDecorator {
                     (int) rect.getCornerRadius());
         } else if (decoratedShape instanceof RegularPolygon) {
             RegularPolygon poly = (RegularPolygon) decoratedShape;
-            // Calculate bounding box for polygon
+            // Get the actual geometric center of the polygon
+            Point center = poly.getGeometricCenter();
+
+            // Draw a small circle at the center point
+            int centerRadius = 3;
+            g2d.drawOval(
+                    center.x - centerRadius,
+                    center.y - centerRadius,
+                    centerRadius * 2,
+                    centerRadius * 2);
+
+            // Draw the selection border around the polygon
             int radius = poly.getRadius();
             g2d.drawOval(
                     poly.getPosition().x - radius - 3,

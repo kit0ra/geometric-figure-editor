@@ -208,8 +208,9 @@ public class WhiteboardPanel extends JPanel {
 
     public void rotateSelectedShapes(int degrees) {
         if (!selectedShapes.isEmpty()) {
-            // Use relative rotation constructor (no whiteboard ref needed)
-            RotateCommand rotateCmd = new RotateCommand(selectedShapes, degrees);
+            // Explicitly pass a new list copy to the command constructor
+            List<Shape> shapesToRotate = new ArrayList<>(selectedShapes);
+            RotateCommand rotateCmd = new RotateCommand(shapesToRotate, degrees);
             commandManager.executeCommand(rotateCmd);
             repaint(); // Repaint after command execution
         }
@@ -217,8 +218,9 @@ public class WhiteboardPanel extends JPanel {
 
     public void rotateSelectedShapesTo(int degrees) {
         if (!selectedShapes.isEmpty()) {
-            // Use absolute rotation constructor (no whiteboard ref needed)
-            RotateCommand rotateCmd = new RotateCommand(selectedShapes, degrees);
+            // Explicitly pass a new list copy to the command constructor
+            List<Shape> shapesToRotate = new ArrayList<>(selectedShapes);
+            RotateCommand rotateCmd = new RotateCommand(shapesToRotate, degrees);
             commandManager.executeCommand(rotateCmd);
             repaint(); // Repaint after command execution
         }

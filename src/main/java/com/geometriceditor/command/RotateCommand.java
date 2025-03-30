@@ -41,16 +41,29 @@ public class RotateCommand implements Command {
 
     @Override
     public void execute() {
+        System.out.println("--- Executing RotateCommand ---"); // DEBUG
         for (Shape shape : shapesToRotate) {
+            System.out.println("Shape ID: " + shape.getId()); // DEBUG
+            float currentRotation = shape.getRotation();
+            System.out.println("Current Rotation: " + currentRotation); // DEBUG
+            float newRotation;
             if (isAbsoluteRotation) {
-                shape.setRotation(rotationAmount); // Set to absolute angle
+                newRotation = rotationAmount;
+                System.out.println("Setting Absolute Rotation to: " + newRotation); // DEBUG
             } else {
-                float currentRotation = shape.getRotation();
-                shape.setRotation((currentRotation + rotationAmount) % 360); // Add relative angle
+                newRotation = (currentRotation + rotationAmount) % 360;
+                // Handle negative results from modulo if necessary
+                if (newRotation < 0) {
+                    newRotation += 360;
+                }
+                System.out.println("Adding Relative Rotation: " + rotationAmount); // DEBUG
+                System.out.println("Calculated New Rotation: " + newRotation); // DEBUG
             }
+            shape.setRotation(newRotation);
+            System.out.println("Rotation set. New shape.getRotation(): " + shape.getRotation()); // DEBUG
         }
-        // Whiteboard repaint is handled by the caller (undo/redo methods in
-        // WhiteboardPanel)
+        System.out.println("--- Finished RotateCommand ---"); // DEBUG
+        // Whiteboard repaint is handled by the caller
     }
 
     @Override
