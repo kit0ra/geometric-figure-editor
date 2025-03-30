@@ -21,6 +21,7 @@ public class AddShapeCommand implements Command {
     @Override
     public void undo() {
         whiteboard.directRemoveShape(shape);
+        whiteboard.directDeselectShape(shape); // Also remove from selection
     }
 
     @Override

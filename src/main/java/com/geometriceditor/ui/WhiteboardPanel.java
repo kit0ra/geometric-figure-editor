@@ -101,6 +101,11 @@ public class WhiteboardPanel extends JPanel {
         repaint();
     }
 
+    public void directDeselectShape(Shape shape) {
+        selectedShapes.remove(shape);
+        // No repaint here, assuming the caller (command) will handle repaint
+    }
+
     public List<Shape> getShapes() {
         return new ArrayList<>(shapes);
     }
