@@ -12,6 +12,7 @@ public class ShapeGroup extends Shape {
     }
 
     public void addShape(Shape shape) {
+        shape.setParent(this);
         shapes.add(shape);
         recalculateBounds();
     }
@@ -76,5 +77,6 @@ public class ShapeGroup extends Shape {
     public void move(int dx, int dy) {
         shapes.forEach(shape -> shape.move(dx, dy));
         super.move(dx, dy);
+        recalculateBounds();
     }
 }

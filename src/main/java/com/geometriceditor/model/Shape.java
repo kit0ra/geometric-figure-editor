@@ -18,6 +18,9 @@ public abstract class Shape implements Cloneable, Serializable {
     // Unique identifier for each shape
     protected String id;
 
+    // Parent shape
+    protected Shape parent;
+
     /**
      * Default constructor
      */
@@ -128,6 +131,14 @@ public abstract class Shape implements Cloneable, Serializable {
 
     public String getId() {
         return id;
+    }
+
+    public Shape getParent() {
+        return parent;
+    }
+
+    public void setParent(Shape parent) {
+        this.parent = parent;
     }
 
     /**

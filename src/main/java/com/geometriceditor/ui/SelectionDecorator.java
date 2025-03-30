@@ -45,25 +45,31 @@ public class SelectionDecorator {
         // Draw selection border based on shape type
         if (decoratedShape instanceof Rectangle) {
             Rectangle rect = (Rectangle) decoratedShape;
-            g2d.drawRoundRect(
-                    rect.getPosition().x - 3,
-                    rect.getPosition().y - 3,
-                    rect.getWidth() + 6,
-                    rect.getHeight() + 6,
-                    (int) rect.getCornerRadius(),
-                    (int) rect.getCornerRadius());
+            // Check if the shape is part of a ShapeGroup
+            if (decoratedShape.getParent() == null) {
+                g2d.drawRoundRect(
+                        rect.getPosition().x - 3,
+                        rect.getPosition().y - 3,
+                        rect.getWidth() + 6,
+                        rect.getHeight() + 6,
+                        (int) rect.getCornerRadius(),
+                        (int) rect.getCornerRadius());
+            }
         } else if (decoratedShape instanceof RegularPolygon) {
             RegularPolygon poly = (RegularPolygon) decoratedShape;
-            // Get the actual geometric center of the polygon
-            Point center = poly.getGeometricCenter();
+            // Check if the shape is part of a ShapeGroup
+            if (decoratedShape.getParent() == null) {
+                // Get the actual geometric center of the polygon
+                Point center = poly.getGeometricCenter();
 
-            // Draw a small circle at the center point
-            int centerRadius = 3;
-            g2d.drawOval(
-                    center.x - centerRadius,
-                    center.y - centerRadius,
-                    centerRadius * 2,
-                    centerRadius * 2);
+                // Draw a small circle at the center point
+                int centerRadius = 3;
+                g2d.drawOval(
+                        center.x - centerRadius,
+                        center.y - centerRadius,
+                        centerRadius * 2,
+                        centerRadius * 2);
+            }
 
             // Draw the selection border around the polygon
             int radius = poly.getRadius();

@@ -12,6 +12,7 @@ public class RegularPolygon extends Shape {
     // Constructors
     public RegularPolygon() {
         super();
+        setPosition(new Point(0, 0));
         this.numberOfSides = 6; // Default hexagon
         this.sideLength = 50;
         calculateRadius();
@@ -19,7 +20,7 @@ public class RegularPolygon extends Shape {
 
     public RegularPolygon(int x, int y, int sides, int sideLength) {
         super();
-        this.position = new Point(x, y);
+        setPosition(new Point(x, y));
         this.numberOfSides = sides;
         this.sideLength = sideLength;
         calculateRadius();
@@ -27,6 +28,7 @@ public class RegularPolygon extends Shape {
 
     public RegularPolygon(RegularPolygon other) {
         super(other);
+        setPosition(new Point(other.getX(), other.getY()));
         this.numberOfSides = other.numberOfSides;
         this.sideLength = other.sideLength;
         this.radius = other.radius;
@@ -62,8 +64,8 @@ public class RegularPolygon extends Shape {
 
         for (int i = 0; i < numberOfSides; i++) {
             double angle = 2 * Math.PI * i / numberOfSides;
-            xPoints[i] = (int) (position.x + radius * Math.cos(angle));
-            yPoints[i] = (int) (position.y + radius * Math.sin(angle));
+            xPoints[i] = (int) (getX() + radius * Math.cos(angle));
+            yPoints[i] = (int) (getY() + radius * Math.sin(angle));
         }
 
         Polygon poly = new Polygon(xPoints, yPoints, numberOfSides);
@@ -100,14 +102,14 @@ public class RegularPolygon extends Shape {
 
     @Override
     public Point getGeometricCenter() {
-        return new Point(position.x, position.y);
+        return new Point(getX(), getY());
     }
 
     @Override
     public String toString() {
         return "RegularPolygon{" +
                 "id='" + id + '\'' +
-                ", position=" + position.x + "," + position.y +
+                ", position=" + getX() + "," + getY() +
                 ", sides=" + numberOfSides +
                 ", sideLength=" + sideLength +
                 ", rotation=" + rotation +
