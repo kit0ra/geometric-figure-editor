@@ -24,9 +24,11 @@ import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
-import com.geometriceditor.command.AddShapeCommand;
+import com.geometriceditor.command.AddShapeCommand; // Import all commands
 import com.geometriceditor.command.CommandManager;
 import com.geometriceditor.command.CompositeCommand;
+import com.geometriceditor.command.GroupCommand;
+import com.geometriceditor.command.UngroupCommand;
 import com.geometriceditor.model.Rectangle;
 import com.geometriceditor.model.RegularPolygon;
 import com.geometriceditor.model.Shape;
@@ -106,6 +108,49 @@ public class WhiteboardPanel extends JPanel {
         // No repaint here, assuming the caller (command) will handle repaint
     }
 
+    public void directSelectShape(Shape shape) {
+        selectedShapes.clear();
+        if (shape != null) {
+            selectedShapes.add(shape);
+        }
+        // No repaint
+    }
+
+    public void directSelectShapes(List<Shape> shapesToSelect) {
+        selectedShapes.clear();
+        if (shapesToSelect != null) {
+            selectedShapes.addAll(shapesToSelect);
+        }
+        // No repaint
+    }
+
+    public ShapeGroup directGroupShapes(List<Shape> shapesToGroup) {
+        ShapeGroup group = new ShapeGroup();
+        shapesToGroup.forEach(group::addShape);
+        shapes.removeAll(shapesToGroup);
+        shapes.add(group);
+        selectedShapes.removeAll(shapesToGroup); // Deselect originals
+        // No repaint
+        return group;
+    }
+
+    public List<Shape> directUngroupShape(ShapeGroup group) {
+        List<Shape> children = group.getShapes();
+        shapes.addAll(children);
+        shapes.remove(group);
+        selectedShapes.remove(group); // Deselect group
+        // No repaint
+        return children;
+    }
+
+    public void directRegroupShapes(List<Shape> children, ShapeGroup originalGroup) {
+        // Assumes children were added back by directUngroupShape's undo
+        shapes.removeAll(children);
+        shapes.add(originalGroup);
+        selectedShapes.removeAll(children); // Deselect children
+        // No repaint
+    }
+
     public List<Shape> getShapes() {
         return new ArrayList<>(shapes);
     }
@@ -136,31 +181,29 @@ public class WhiteboardPanel extends JPanel {
 
     public void groupSelected() {
         if (selectedShapes.size() > 1) {
-            ShapeGroup group = new ShapeGroup();
-            selectedShapes.forEach(group::addShape);
-            shapes.removeAll(selectedShapes);
-            shapes.add(group);
-            selectedShapes.clear();
-            selectedShapes.add(group);
-            repaint();
+            // Create and execute GroupCommand
+            GroupCommand groupCmd = new GroupCommand(this, selectedShapes);
+            commandManager.executeCommand(groupCmd);
+            repaint(); // Repaint after command execution
         }
     }
 
     public void ungroupSelected() {
+        // Create a composite command if multiple groups are selected
+        CompositeCommand batchUngroup = new CompositeCommand();
         new ArrayList<>(selectedShapes).stream()
                 .filter(ShapeGroup.class::isInstance)
                 .map(ShapeGroup.class::cast)
-                .forEach(this::ungroupShape);
-        repaint();
+                .forEach(group -> batchUngroup.add(new UngroupCommand(this, group)));
+
+        if (!batchUngroup.isEmpty()) {
+            commandManager.executeCommand(batchUngroup);
+            repaint(); // Repaint after command execution
+        }
     }
 
-    private void ungroupShape(ShapeGroup group) {
-        List<Shape> children = group.getShapes();
-        shapes.addAll(children);
-        shapes.remove(group);
-        selectedShapes.remove(group);
-        selectedShapes.addAll(children);
-    }
+    // Removed the old private ungroupShape method as logic is now in UngroupCommand
+    // and directUngroupShape
 
     public void rotateSelectedShapes(int degrees) {
         for (Shape shape : selectedShapes) {
