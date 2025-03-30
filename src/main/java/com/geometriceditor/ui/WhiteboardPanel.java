@@ -25,9 +25,10 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 import com.geometriceditor.command.AddShapeCommand; // Import all commands
-import com.geometriceditor.command.CommandManager;
+import com.geometriceditor.command.CommandManager; // Import all commands (already done, but ensuring RotateCommand is included)
 import com.geometriceditor.command.CompositeCommand;
 import com.geometriceditor.command.GroupCommand;
+import com.geometriceditor.command.RotateCommand;
 import com.geometriceditor.command.UngroupCommand;
 import com.geometriceditor.model.Rectangle;
 import com.geometriceditor.model.RegularPolygon;
@@ -206,18 +207,21 @@ public class WhiteboardPanel extends JPanel {
     // and directUngroupShape
 
     public void rotateSelectedShapes(int degrees) {
-        for (Shape shape : selectedShapes) {
-            float newRotation = shape.getRotation() + degrees;
-            shape.setRotation(newRotation % 360); // Keep within 0-360 range
+        if (!selectedShapes.isEmpty()) {
+            // Use relative rotation constructor (no whiteboard ref needed)
+            RotateCommand rotateCmd = new RotateCommand(selectedShapes, degrees);
+            commandManager.executeCommand(rotateCmd);
+            repaint(); // Repaint after command execution
         }
-        repaint();
     }
 
     public void rotateSelectedShapesTo(int degrees) {
-        for (Shape shape : selectedShapes) {
-            shape.setRotation(degrees % 360); // Keep within 0-360 range
+        if (!selectedShapes.isEmpty()) {
+            // Use absolute rotation constructor (no whiteboard ref needed)
+            RotateCommand rotateCmd = new RotateCommand(selectedShapes, degrees);
+            commandManager.executeCommand(rotateCmd);
+            repaint(); // Repaint after command execution
         }
-        repaint();
     }
 
     // ==================== COMMAND MANAGEMENT ====================

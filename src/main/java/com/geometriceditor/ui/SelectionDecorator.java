@@ -3,10 +3,12 @@ package com.geometriceditor.ui;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform; // Import AffineTransform
 
 import com.geometriceditor.model.Rectangle;
 import com.geometriceditor.model.RegularPolygon;
 import com.geometriceditor.model.Shape;
+import com.geometriceditor.model.Shape.Point; // Import Point
 
 public class SelectionDecorator {
     private final Shape decoratedShape;
@@ -24,9 +26,17 @@ public class SelectionDecorator {
     }
 
     public void drawSelection(Graphics2D g2d) {
-        // Save original paint and stroke
+        // Save original state
         Color originalColor = g2d.getColor();
         java.awt.Stroke originalStroke = g2d.getStroke();
+        AffineTransform oldTransform = g2d.getTransform(); // Save original transform
+
+        // Apply rotation if necessary
+        float rotation = decoratedShape.getRotation();
+        if (rotation != 0) {
+            Point center = decoratedShape.getGeometricCenter();
+            g2d.rotate(Math.toRadians(rotation), center.x, center.y);
+        }
 
         // Set selection style
         g2d.setColor(SELECTION_COLOR);
@@ -52,8 +62,12 @@ public class SelectionDecorator {
                     radius * 2 + 6,
                     radius * 2 + 6);
         }
+        // Add handling for ShapeGroup if needed (e.g., draw bounding box for group
+        // selection)
+        // else if (decoratedShape instanceof ShapeGroup) { ... }
 
-        // Restore original paint and stroke
+        // Restore original state
+        g2d.setTransform(oldTransform); // Restore original transform
         g2d.setColor(originalColor);
         g2d.setStroke(originalStroke);
     }
