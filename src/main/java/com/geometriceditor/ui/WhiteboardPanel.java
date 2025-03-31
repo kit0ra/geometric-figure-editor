@@ -37,11 +37,9 @@ import com.geometriceditor.command.MoveCommand;
 import com.geometriceditor.command.RotateCommand; // Import the new command
 import com.geometriceditor.command.UngroupCommand;
 import com.geometriceditor.factory.ShapeFactory;
-import com.geometriceditor.model.Rectangle;
-import com.geometriceditor.model.RegularPolygon;
 import com.geometriceditor.model.Shape;
 import com.geometriceditor.model.ShapeGroup;
-import com.geometriceditor.rendering.AWTRenderer; // Added
+import com.geometriceditor.rendering.AWTRenderer;
 import com.geometriceditor.rendering.ShapeRenderer;
 
 public class WhiteboardPanel extends JPanel {
@@ -535,24 +533,14 @@ public class WhiteboardPanel extends JPanel {
                 .forEach(selectedShapes::add);
     }
 
+    // Use BoundingBoxVisitor to get shape bounds
     private java.awt.Rectangle getShapeBounds(Shape shape) {
-        if (shape instanceof Rectangle) {
-            Rectangle rect = (Rectangle) shape;
-            return new java.awt.Rectangle(
-                    rect.getPosition().x,
-                    rect.getPosition().y,
-                    rect.getWidth(),
-                    rect.getHeight());
-        } else if (shape instanceof RegularPolygon) {
-            RegularPolygon poly = (RegularPolygon) shape;
-            int radius = poly.getRadius();
-            return new java.awt.Rectangle(
-                    poly.getPosition().x - radius,
-                    poly.getPosition().y - radius,
-                    radius * 2,
-                    radius * 2);
+        if (shape == null) {
+            return new java.awt.Rectangle(); // Return empty for null shape
         }
-        return new java.awt.Rectangle();
+        // Need to import BoundingBoxVisitor
+        com.geometriceditor.visitor.BoundingBoxVisitor visitor = new com.geometriceditor.visitor.BoundingBoxVisitor();
+        return shape.accept(visitor);
     }
 
     // ==================== CONTEXT MENU ====================

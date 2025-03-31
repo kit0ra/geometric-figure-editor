@@ -142,6 +142,15 @@ public abstract class Shape implements Cloneable, Serializable {
     }
 
     /**
+     * Accepts a visitor.
+     * 
+     * @param visitor The visitor to accept.
+     * @param <R>     The return type of the visitor's methods.
+     * @return The result of the visitor's operation.
+     */
+    public abstract <R> R accept(com.geometriceditor.visitor.ShapeVisitor<R> visitor);
+
+    /**
      * Represents a 2D point
      */
     public static class Point implements Cloneable, Serializable {

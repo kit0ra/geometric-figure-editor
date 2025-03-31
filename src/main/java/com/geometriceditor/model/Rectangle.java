@@ -126,4 +126,9 @@ public class Rectangle extends Shape {
         // Check for intersection
         return thisRect.intersects(otherRect);
     }
+
+    @Override
+    public <R> R accept(com.geometriceditor.visitor.ShapeVisitor<R> visitor) {
+        return visitor.visit(this);
+    }
 }

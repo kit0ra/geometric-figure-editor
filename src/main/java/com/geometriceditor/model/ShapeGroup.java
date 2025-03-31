@@ -79,4 +79,16 @@ public class ShapeGroup extends Shape {
         super.move(dx, dy);
         recalculateBounds();
     }
+
+    @Override
+    public <R> R accept(com.geometriceditor.visitor.ShapeVisitor<R> visitor) {
+        // A group might visit itself first, then its children, or just children.
+        // Let's have it visit itself.
+        return visitor.visit(this);
+        // If you wanted to visit children instead/as well:
+        // for (Shape shape : shapes) {
+        // shape.accept(visitor);
+        // }
+        // The return type handling would depend on the visitor's purpose.
+    }
 }

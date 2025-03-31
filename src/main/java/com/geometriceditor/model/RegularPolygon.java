@@ -115,4 +115,9 @@ public class RegularPolygon extends Shape {
                 ", rotation=" + rotation +
                 '}';
     }
+
+    @Override
+    public <R> R accept(com.geometriceditor.visitor.ShapeVisitor<R> visitor) {
+        return visitor.visit(this);
+    }
 }
