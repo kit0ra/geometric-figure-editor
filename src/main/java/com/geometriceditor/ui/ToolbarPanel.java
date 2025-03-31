@@ -3,20 +3,27 @@ package com.geometriceditor.ui;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.Point; // Added
+import java.awt.datatransfer.Transferable; // Added
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener; // Added
 import java.util.Objects;
 
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
+import javax.swing.JFrame; // Added
 import javax.swing.JOptionPane;
 import javax.swing.JSlider;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 
 import com.geometriceditor.factory.ShapeFactory;
-import com.geometriceditor.model.Shape;
+import com.geometriceditor.model.Shape; // Added
 
 public class ToolbarPanel extends JToolBar {
     private ShapeFactory shapeFactory;
@@ -40,20 +47,14 @@ public class ToolbarPanel extends JToolBar {
     }
 
     private void addShapeButtons() {
-        // Rectangle Button
-        JButton rectangleButton = createShapeButton("Rectangle", e -> {
-            addShapeToWhiteboard(() -> {
-                return shapeFactory.createRectangle(50, 50, 100, 50);
-            });
-        });
+        // Rectangle Button - Pass the ShapeSupplier directly
+        JButton rectangleButton = createShapeButton("Rectangle",
+                () -> shapeFactory.createRectangle(50, 50, 100, 50));
         add(rectangleButton);
 
-        // Polygon Button
-        JButton polygonButton = createShapeButton("Polygon", e -> {
-            addShapeToWhiteboard(() -> {
-                return shapeFactory.createRegularPolygon(50, 50, 6, 50);
-            });
-        });
+        // Polygon Button - Pass the ShapeSupplier directly
+        JButton polygonButton = createShapeButton("Polygon",
+                () -> shapeFactory.createRegularPolygon(50, 50, 6, 50));
         add(polygonButton);
     }
 
@@ -146,9 +147,36 @@ public class ToolbarPanel extends JToolBar {
     }
 
     // helpers
-    private JButton createShapeButton(String name, ActionListener action) {
-        JButton button = new JButton(name);
-        button.addActionListener(action);
+    private JButton createShapeButton(String shapeType, ShapeSupplier shapeSupplier) { // Changed param type
+        JButton button = new JButton(shapeType);
+        // Remove ActionListener entirely, handler will manage click
+        // button.addActionListener(fallbackAction);
+
+        // Pass the button AND the ShapeSupplier to the handler
+        ShapeButtonMouseHandler mouseHandler = new ShapeButtonMouseHandler(button, shapeSupplier);
+        button.addMouseListener(mouseHandler);
+        button.addMouseMotionListener(mouseHandler);
+
+        // Set TransferHandler to provide the shape type data when drag is initiated
+        button.setTransferHandler(new TransferHandler() {
+            @Override
+            public int getSourceActions(JComponent c) {
+                return COPY; // We are copying a shape type to create a new one
+            }
+
+            @Override
+            protected Transferable createTransferable(JComponent c) {
+                // Create our custom Transferable with the shape type (button's text)
+                return new TransferableShape(shapeType);
+            }
+
+            @Override
+            protected void exportDone(JComponent source, Transferable data, int action) {
+                // Cleanup after drag if needed (not necessary here)
+                super.exportDone(source, data, action);
+            }
+        });
+
         return button;
     }
 
@@ -262,5 +290,79 @@ public class ToolbarPanel extends JToolBar {
     @FunctionalInterface
     private interface ShapeSupplier {
         Shape get();
+    }
+
+    // Inner class to handle mouse events for shape buttons (click vs drag)
+    private static class ShapeButtonMouseHandler extends MouseAdapter implements MouseMotionListener {
+        private final JButton button;
+        private final ShapeSupplier shapeSupplier; // Store the shape creation logic
+        private Point pressPoint;
+        private boolean potentiallyDragging = false;
+        private static final int DRAG_THRESHOLD = 5; // Pixels threshold to start drag
+
+        public ShapeButtonMouseHandler(JButton button, ShapeSupplier shapeSupplier) { // Accept ShapeSupplier
+            this.button = button;
+            this.shapeSupplier = shapeSupplier; // Store the supplier
+        }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            pressPoint = e.getPoint();
+            potentiallyDragging = true; // Flag that a drag might start
+        }
+
+        @Override
+        public void mouseDragged(MouseEvent e) {
+            if (potentiallyDragging) {
+                Point currentPoint = e.getPoint();
+                int dx = Math.abs(currentPoint.x - pressPoint.x);
+                int dy = Math.abs(currentPoint.y - pressPoint.y);
+                // Check if movement exceeds threshold
+                if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
+                    JComponent comp = (JComponent) e.getSource();
+                    TransferHandler handler = comp.getTransferHandler();
+                    if (handler != null) {
+                        // Initiate the drag
+                        handler.exportAsDrag(comp, e, TransferHandler.COPY);
+                        potentiallyDragging = false; // Drag started, clear flag
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+            // If potentiallyDragging is still true, it means mouseDragged didn't
+            // initiate a drag, so treat it as a click.
+            if (potentiallyDragging) {
+                // Check if the release is still within the button bounds
+                if (button.contains(e.getPoint())) {
+                    // Directly execute the shape creation logic for a click
+                    try {
+                        // Need access to the ToolbarPanel's whiteboard instance.
+                        // A bit tricky from a static inner class.
+                        // Let's find the ToolbarPanel ancestor.
+                        ToolbarPanel toolbar = (ToolbarPanel) SwingUtilities.getAncestorOfClass(ToolbarPanel.class,
+                                button);
+                        if (toolbar != null) {
+                            toolbar.addShapeToWhiteboard(shapeSupplier); // Use the stored supplier
+                        } else {
+                            System.err.println("Could not find ToolbarPanel ancestor for click action.");
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Error executing click action: " + ex.getMessage());
+                        ex.printStackTrace();
+                    }
+                }
+            }
+            // Reset state regardless
+            potentiallyDragging = false;
+            pressPoint = null;
+        }
+
+        // Implement other MouseMotionListener methods (can be empty)
+        @Override
+        public void mouseMoved(MouseEvent e) {
+        }
     }
 }

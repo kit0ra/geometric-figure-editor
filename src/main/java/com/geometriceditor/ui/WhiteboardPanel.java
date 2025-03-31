@@ -7,34 +7,41 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.util.ArrayList;
+import java.awt.event.MouseEvent; // Added
+import java.awt.event.MouseMotionAdapter; // Added
+import java.io.IOException; // Added
+import java.util.ArrayList; // Added
 import java.util.List;
+import java.util.Objects;
 
-import javax.swing.AbstractAction;
+import javax.swing.AbstractAction; // Added
 import javax.swing.JFrame;
-import javax.swing.JMenuItem;
+import javax.swing.JMenuItem; // Added
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 
-import com.geometriceditor.command.AddShapeCommand; // Import all commands
-import com.geometriceditor.command.CommandManager; // Import all commands (already done, but ensuring RotateCommand is included)
+import com.geometriceditor.command.AddShapeCommand;
+import com.geometriceditor.command.CommandManager; // Import all commands
 import com.geometriceditor.command.CompositeCommand;
 import com.geometriceditor.command.GroupCommand;
-import com.geometriceditor.command.RotateCommand;
+import com.geometriceditor.command.MoveCommand;
+import com.geometriceditor.command.RotateCommand; // Import the new command
 import com.geometriceditor.command.UngroupCommand;
+import com.geometriceditor.factory.ShapeFactory;
 import com.geometriceditor.model.Rectangle;
 import com.geometriceditor.model.RegularPolygon;
 import com.geometriceditor.model.Shape;
 import com.geometriceditor.model.ShapeGroup;
-import com.geometriceditor.rendering.AWTRenderer;
+import com.geometriceditor.rendering.AWTRenderer; // Added
 import com.geometriceditor.rendering.ShapeRenderer;
 
 public class WhiteboardPanel extends JPanel {
@@ -47,9 +54,13 @@ public class WhiteboardPanel extends JPanel {
     private final List<Shape> selectedShapes = new ArrayList<>();
     private final CommandManager commandManager = new CommandManager();
     private final ShapeRenderer shapeRenderer = new AWTRenderer(); // Instantiate the renderer
+    private final ShapeFactory shapeFactory; // Added ShapeFactory field
 
     // UI interaction fields
-    private Point dragStartPoint;
+    private Point dragStartPoint; // Where the current drag segment started
+    private Point dragOriginPoint; // Where the entire drag operation started
+    private int dragTotalDx = 0; // Accumulated dx for the command
+    private int dragTotalDy = 0; // Accumulated dy for the command
     private Point selectionStartPoint;
     private java.awt.Rectangle selectionRectangle;
     private boolean isCtrlPressed = false;
@@ -64,12 +75,14 @@ public class WhiteboardPanel extends JPanel {
     private boolean isDraggingRotationCenter = false;
 
     // ==================== CONSTRUCTOR ====================
-    public WhiteboardPanel() {
+    public WhiteboardPanel(ShapeFactory shapeFactory) { // Added ShapeFactory parameter
+        this.shapeFactory = Objects.requireNonNull(shapeFactory, "ShapeFactory cannot be null"); // Store ShapeFactory
         setDoubleBuffered(true);
         setBackground(Color.WHITE);
         setFocusable(true);
         setupInputListeners();
         setupContextMenu();
+        setupDragAndDrop(); // Added call to setup D&D
     }
 
     // ==================== INITIALIZATION ====================
@@ -77,6 +90,10 @@ public class WhiteboardPanel extends JPanel {
         addKeyListener(new KeyHandler());
         addMouseListener(new MouseHandler());
         addMouseMotionListener(new MouseMotionHandler());
+    }
+
+    private void setupDragAndDrop() {
+        setTransferHandler(new ShapeDropHandler());
     }
 
     // ==================== SHAPE MANAGEMENT ====================
@@ -333,7 +350,7 @@ public class WhiteboardPanel extends JPanel {
 
         @Override
         public void mouseReleased(MouseEvent e) {
-            finalizeSelection();
+            finalizeDragOrSelection(e.getPoint()); // Use a new method
         }
     }
 
@@ -377,7 +394,12 @@ public class WhiteboardPanel extends JPanel {
             repaint();
             return;
         } else {
-            handleShapeSelection(clickedShape, point);
+            handleShapeSelection(clickedShape, point); // This sets dragStartPoint
+            if (dragStartPoint != null) {
+                dragOriginPoint = point; // Store the absolute start of the drag
+                dragTotalDx = 0; // Reset accumulators
+                dragTotalDy = 0;
+            }
         }
 
         repaint();
@@ -401,22 +423,61 @@ public class WhiteboardPanel extends JPanel {
             }
             rotationCenterDragStart = point;
             repaint();
+            return; // Don't process shape drag if dragging rotation center
         }
+
         if (dragStartPoint != null) {
-            moveSelectedShapes(point);
+            // Calculate delta for this drag segment
+            int dx = point.x - dragStartPoint.x;
+            int dy = point.y - dragStartPoint.y;
+
+            // Update total displacement for the command
+            dragTotalDx += dx;
+            dragTotalDy += dy;
+
+            // Visually move shapes during drag (temporary)
+            for (Shape shape : selectedShapes) {
+                shape.move(dx, dy);
+            }
+            dragStartPoint = point; // Update start for the *next* drag segment
+
         } else if (selectionStartPoint != null) {
-            updateSelectionRectangle(point);
+            updateSelectionRectangle(point); // Handle rectangle selection drag
         }
         repaint();
     }
 
-    private void finalizeSelection() {
+    // Renamed and modified from finalizeSelection
+    private void finalizeDragOrSelection(Point releasePoint) {
+        // Finalize rectangle selection
         if (selectionRectangle != null) {
             selectShapesInRectangle(selectionRectangle);
             selectionRectangle = null;
+            selectionStartPoint = null; // Reset selection start
         }
+
+        // Finalize shape drag by creating a command
+        if (dragStartPoint != null && (dragTotalDx != 0 || dragTotalDy != 0)) {
+            // Important: Before creating the command, revert the temporary visual moves
+            // so the command executes from the original position.
+            for (Shape shape : selectedShapes) {
+                shape.move(-dragTotalDx, -dragTotalDy);
+            }
+
+            // Create and execute the command
+            // Pass a *copy* of selectedShapes to the command
+            MoveCommand moveCmd = new MoveCommand(new ArrayList<>(selectedShapes), dragTotalDx, dragTotalDy);
+            commandManager.executeCommand(moveCmd);
+        }
+
+        // Reset drag state regardless of whether a command was created
         dragStartPoint = null;
-        repaint();
+        dragOriginPoint = null;
+        dragTotalDx = 0;
+        dragTotalDy = 0;
+        isDraggingRotationCenter = false; // Also reset rotation drag state
+
+        repaint(); // Repaint to show final state
     }
 
     // ==================== SELECTION HELPERS ====================
@@ -440,19 +501,13 @@ public class WhiteboardPanel extends JPanel {
             selectedShapes.clear();
             selectedShapes.add(shape);
         }
+        // Set dragStartPoint to indicate a drag should begin on next mouseDragged event
         dragStartPoint = point;
+        // dragOriginPoint and accumulators are set in handleMousePress
     }
 
-    private void moveSelectedShapes(Point point) {
-        int dx = point.x - dragStartPoint.x;
-        int dy = point.y - dragStartPoint.y;
-
-        for (Shape shape : selectedShapes) {
-            shape.move(dx, dy);
-        }
-        dragStartPoint = point;
-        repaint();
-    }
+    // Removed moveSelectedShapes method as logic is now in handleMouseDrag and
+    // finalizeDragOrSelection
 
     private void updateSelectionRectangle(Point point) {
         int x = Math.min(selectionStartPoint.x, point.x);
@@ -591,4 +646,63 @@ public class WhiteboardPanel extends JPanel {
         return gridColor;
     }
 
+    // ==================== DRAG AND DROP HANDLER ====================
+    private class ShapeDropHandler extends TransferHandler {
+        @Override
+        public boolean canImport(TransferSupport support) {
+            // Check if the drop location is valid and the data flavor is supported
+            if (!support.isDrop()) {
+                return false;
+            }
+            return support.isDataFlavorSupported(TransferableShape.SHAPE_TYPE_FLAVOR);
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
+            }
+
+            Transferable transferable = support.getTransferable();
+            Point dropPoint = support.getDropLocation().getDropPoint();
+
+            try {
+                // Get the shape type string from the transferable
+                String shapeType = (String) transferable.getTransferData(TransferableShape.SHAPE_TYPE_FLAVOR);
+
+                // Use the ShapeFactory to create the shape at the drop location
+                Shape newShape = null;
+                int defaultWidth = 100;
+                int defaultHeight = 50;
+                int defaultRadius = 50;
+                int defaultSides = 6;
+
+                // Adjust position so the shape center is at the drop point
+                int x = dropPoint.x;
+                int y = dropPoint.y;
+
+                if ("Rectangle".equals(shapeType)) {
+                    // Center the rectangle on the drop point
+                    x -= defaultWidth / 2;
+                    y -= defaultHeight / 2;
+                    newShape = shapeFactory.createRectangle(x, y, defaultWidth, defaultHeight);
+                } else if ("Polygon".equals(shapeType)) {
+                    // RegularPolygon position is already its center
+                    newShape = shapeFactory.createRegularPolygon(x, y, defaultSides, defaultRadius);
+                }
+
+                // Add the shape using the command pattern
+                if (newShape != null) {
+                    commandManager.executeCommand(new AddShapeCommand(WhiteboardPanel.this, newShape));
+                    return true;
+                }
+
+            } catch (UnsupportedFlavorException | IOException e) {
+                System.err.println("Error importing shape data: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+    }
 }

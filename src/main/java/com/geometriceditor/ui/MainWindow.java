@@ -70,7 +70,8 @@ public class MainWindow extends JFrame {
     }
 
     private void initializeWhiteboard() {
-        whiteboard = new WhiteboardPanel();
+        // Pass the ShapeFactory to the WhiteboardPanel constructor
+        whiteboard = new WhiteboardPanel(shapeFactory);
         add(new JScrollPane(whiteboard), BorderLayout.CENTER);
     }
 
