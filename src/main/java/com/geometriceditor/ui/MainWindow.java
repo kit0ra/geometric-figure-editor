@@ -21,6 +21,7 @@ import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 
+import com.geometriceditor.command.CommandManager; // Added
 import com.geometriceditor.factory.ShapeFactory;
 import com.geometriceditor.state.StateManager;
 
@@ -31,6 +32,7 @@ public class MainWindow extends JFrame {
     private WhiteboardPanel whiteboard;
     private ToolbarPanel toolbarPanel;
     private ShapeFactory shapeFactory;
+    private CommandManager commandManager; // Added CommandManager instance
 
     public MainWindow() {
         // Basic window setup
@@ -39,12 +41,13 @@ public class MainWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Initialize factory
+        // Initialize factory and command manager
         shapeFactory = ShapeFactory.getInstance();
+        commandManager = new CommandManager(); // Create CommandManager
 
-        // Create components
-        initializeWhiteboard();
-        initializeToolbar();
+        // Create components (order matters: whiteboard needs commandManager)
+        initializeWhiteboard(); // Pass commandManager here
+        initializeToolbar(); // Toolbar needs whiteboard
         initializeMenuBar();
 
         // Center the window
@@ -70,8 +73,8 @@ public class MainWindow extends JFrame {
     }
 
     private void initializeWhiteboard() {
-        // Pass the ShapeFactory to the WhiteboardPanel constructor
-        whiteboard = new WhiteboardPanel(shapeFactory);
+        // Pass both ShapeFactory and CommandManager to the WhiteboardPanel constructor
+        whiteboard = new WhiteboardPanel(shapeFactory, commandManager);
         add(new JScrollPane(whiteboard), BorderLayout.CENTER);
     }
 

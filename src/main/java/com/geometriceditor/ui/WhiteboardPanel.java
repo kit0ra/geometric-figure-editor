@@ -30,7 +30,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
 import com.geometriceditor.command.AddShapeCommand;
-import com.geometriceditor.command.CommandManager; // Import all commands
+import com.geometriceditor.command.CommandExecutionListener; // Added
+import com.geometriceditor.command.CommandManager;
 import com.geometriceditor.command.CompositeCommand;
 import com.geometriceditor.command.GroupCommand;
 import com.geometriceditor.command.MoveCommand;
@@ -42,7 +43,8 @@ import com.geometriceditor.model.ShapeGroup;
 import com.geometriceditor.rendering.AWTRenderer;
 import com.geometriceditor.rendering.ShapeRenderer;
 
-public class WhiteboardPanel extends JPanel {
+// Implement the listener interface
+public class WhiteboardPanel extends JPanel implements CommandExecutionListener {
     // Constants
     private static final Color SELECTION_COLOR = new Color(0, 120, 215);
     private static final Color SELECTION_FILL = new Color(0, 120, 215, 50);
@@ -50,9 +52,9 @@ public class WhiteboardPanel extends JPanel {
     // State fields
     private final List<Shape> shapes = new ArrayList<>();
     private final List<Shape> selectedShapes = new ArrayList<>();
-    private final CommandManager commandManager = new CommandManager();
-    private final ShapeRenderer shapeRenderer = new AWTRenderer(); // Instantiate the renderer
-    private final ShapeFactory shapeFactory; // Added ShapeFactory field
+    private final CommandManager commandManager; // Now passed in
+    private final ShapeRenderer shapeRenderer = new AWTRenderer();
+    private final ShapeFactory shapeFactory;
 
     // UI interaction fields
     private Point dragStartPoint; // Where the current drag segment started
@@ -73,8 +75,12 @@ public class WhiteboardPanel extends JPanel {
     private boolean isDraggingRotationCenter = false;
 
     // ==================== CONSTRUCTOR ====================
-    public WhiteboardPanel(ShapeFactory shapeFactory) { // Added ShapeFactory parameter
-        this.shapeFactory = Objects.requireNonNull(shapeFactory, "ShapeFactory cannot be null"); // Store ShapeFactory
+    // Accept CommandManager as well
+    public WhiteboardPanel(ShapeFactory shapeFactory, CommandManager commandManager) {
+        this.shapeFactory = Objects.requireNonNull(shapeFactory, "ShapeFactory cannot be null");
+        this.commandManager = Objects.requireNonNull(commandManager, "CommandManager cannot be null");
+        this.commandManager.addListener(this); // Register as listener
+
         setDoubleBuffered(true);
         setBackground(Color.WHITE);
         setFocusable(true);
@@ -200,7 +206,7 @@ public class WhiteboardPanel extends JPanel {
             // Create and execute GroupCommand
             GroupCommand groupCmd = new GroupCommand(this, selectedShapes);
             commandManager.executeCommand(groupCmd);
-            repaint(); // Repaint after command execution
+            // repaint(); // REMOVED: Handled by listener notification
         }
     }
 
@@ -214,7 +220,7 @@ public class WhiteboardPanel extends JPanel {
 
         if (!batchUngroup.isEmpty()) {
             commandManager.executeCommand(batchUngroup);
-            repaint(); // Repaint after command execution
+            // repaint(); // REMOVED: Handled by listener notification
         }
     }
 
@@ -227,7 +233,7 @@ public class WhiteboardPanel extends JPanel {
             List<Shape> shapesToRotate = new ArrayList<>(selectedShapes);
             RotateCommand rotateCmd = new RotateCommand(shapesToRotate, degrees);
             commandManager.executeCommand(rotateCmd);
-            repaint(); // Repaint after command execution
+            // repaint(); // REMOVED: Handled by listener notification
         }
     }
 
@@ -237,19 +243,22 @@ public class WhiteboardPanel extends JPanel {
             List<Shape> shapesToRotate = new ArrayList<>(selectedShapes);
             RotateCommand rotateCmd = new RotateCommand(shapesToRotate, degrees);
             commandManager.executeCommand(rotateCmd);
-            repaint(); // Repaint after command execution
+            // repaint(); // REMOVED: Handled by listener notification
         }
     }
 
     // ==================== COMMAND MANAGEMENT ====================
+    // Note: undo/redo in CommandManager now notify the listener,
+    // so direct calls from ToolbarPanel/MainWindow will trigger repaint via
+    // listener.
     public void undo() {
         commandManager.undo();
-        repaint();
+        // repaint(); // REMOVED: Handled by listener notification
     }
 
     public void redo() {
         commandManager.redo();
-        repaint();
+        // repaint(); // REMOVED: Handled by listener notification
     }
 
     // ==================== RENDERING ====================
@@ -475,7 +484,13 @@ public class WhiteboardPanel extends JPanel {
         dragTotalDy = 0;
         isDraggingRotationCenter = false; // Also reset rotation drag state
 
-        repaint(); // Repaint to show final state
+        // repaint(); // REMOVED: Handled by listener notification (if a command was
+        // executed)
+        // Note: If no command was executed (e.g., just a click without drag),
+        // a repaint might still be needed here or handled elsewhere if selection
+        // changed visually.
+        // For now, assume command notification covers the main cases.
+        // If simple clicks need repaint, commandExecuted() handles it.
     }
 
     // ==================== SELECTION HELPERS ====================
@@ -632,6 +647,14 @@ public class WhiteboardPanel extends JPanel {
 
     public Color getGridColor() {
         return gridColor;
+    }
+
+    // ==================== CommandExecutionListener Implementation
+    // ====================
+    @Override
+    public void commandExecuted() {
+        // Central repaint trigger
+        repaint();
     }
 
     // ==================== DRAG AND DROP HANDLER ====================
