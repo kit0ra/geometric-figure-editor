@@ -13,14 +13,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent; // Added
-import java.awt.event.MouseMotionAdapter; // Added
-import java.io.IOException; // Added
-import java.util.ArrayList; // Added
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections; // Added
+import java.util.Iterator; // Added
 import java.util.List;
 import java.util.Objects;
 
-import javax.swing.AbstractAction; // Added
+import javax.swing.AbstractAction;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem; // Added
 import javax.swing.JPanel;
@@ -43,8 +45,8 @@ import com.geometriceditor.model.ShapeGroup;
 import com.geometriceditor.rendering.AWTRenderer;
 import com.geometriceditor.rendering.ShapeRenderer;
 
-// Implement the listener interface
-public class WhiteboardPanel extends JPanel implements CommandExecutionListener {
+// Implement the listener interface and Iterable
+public class WhiteboardPanel extends JPanel implements CommandExecutionListener, Iterable<Shape> {
     // Constants
     private static final Color SELECTION_COLOR = new Color(0, 120, 215);
     private static final Color SELECTION_FILL = new Color(0, 120, 215, 50);
@@ -309,8 +311,10 @@ public class WhiteboardPanel extends JPanel implements CommandExecutionListener 
     }
 
     private void renderShapes(Graphics2D g2d) {
-        // Use the renderer to draw each shape
-        shapes.forEach(shape -> shape.draw(g2d, shapeRenderer));
+        // Use the iterator implicitly via enhanced for-loop
+        for (Shape shape : this) { // 'this' is iterable now
+            shape.draw(g2d, shapeRenderer);
+        }
     }
 
     private void renderSelections(Graphics2D g2d) {
@@ -715,5 +719,17 @@ public class WhiteboardPanel extends JPanel implements CommandExecutionListener 
 
             return false;
         }
+    }
+
+    /**
+     * Returns an iterator over the top-level shapes on the whiteboard.
+     * Provides an unmodifiable view.
+     *
+     * @return an Iterator.
+     */
+    @Override
+    public Iterator<Shape> iterator() {
+        // Return an iterator over an unmodifiable view of the shapes list
+        return Collections.unmodifiableList(shapes).iterator();
     }
 }

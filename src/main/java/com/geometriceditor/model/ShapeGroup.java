@@ -2,9 +2,12 @@ package com.geometriceditor.model;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.Collections; // Added
+import java.util.Iterator; // Added
 import java.util.List;
 
-public class ShapeGroup extends Shape {
+// Implement Iterable<Shape>
+public class ShapeGroup extends Shape implements Iterable<Shape> {
     private List<Shape> shapes = new ArrayList<>();
 
     public ShapeGroup() {
@@ -51,9 +54,9 @@ public class ShapeGroup extends Shape {
         // Optionally call the renderer for the group itself (e.g., draw bounding box)
         renderer.drawShapeGroup(g2d, this);
 
-        // Draw all shapes in the group, passing the renderer down
-        for (Shape shape : shapes) {
-            shape.draw(g2d, renderer); // Pass the renderer
+        // Draw all shapes in the group using the iterator implicitly
+        for (Shape shape : this) { // 'this' is iterable
+            shape.draw(g2d, renderer);
         }
     }
 
@@ -90,5 +93,18 @@ public class ShapeGroup extends Shape {
         // shape.accept(visitor);
         // }
         // The return type handling would depend on the visitor's purpose.
+    }
+
+    /**
+     * Returns an iterator over the shapes in this group.
+     * Provides an unmodifiable view to prevent external modification via iterator.
+     *
+     * @return an Iterator.
+     */
+    @Override
+    public Iterator<Shape> iterator() {
+        // Return an iterator over an unmodifiable view of the list
+        // to prevent removal through the iterator.
+        return Collections.unmodifiableList(shapes).iterator();
     }
 }
